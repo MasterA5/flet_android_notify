@@ -45,7 +45,12 @@ class NotificationDemo:
             tooltip="Limpar todas as notificações",
         )
 
-        self.page.add(self.build())
+        self.page.add(
+            ft.SafeArea(
+                content=self.build(),
+                expand=True,
+            )
+        )
 
         if self.dev_mode:
             self._show_snack(
@@ -222,7 +227,7 @@ class NotificationDemo:
                                 controls=[
                                     ft.OutlinedButton(
                                         "3 Botões",
-                                        icon=ft.Icons.GRID_VIEW,
+                                        icon=ft.Icons.EXPAND,
                                         on_click=self._send_with_three_buttons,
                                         expand=True,
                                     )
@@ -238,7 +243,7 @@ class NotificationDemo:
     def _build_images_section(self):
         return ft.ExpansionTile(
             title=ft.Text("🖼️ Com Imagens"),
-            subtitle=ft.Text("Large icon, big picture e ambos"),
+            subtitle=ft.Text("Ícones grandes e big pictures"),
             controls=[
                 ft.Container(
                     content=ft.ResponsiveRow(
@@ -247,7 +252,7 @@ class NotificationDemo:
                                 col={"xs": 12, "sm": 6, "md": 4},
                                 controls=[
                                     ft.OutlinedButton(
-                                        "Large Icon",
+                                        "Ícone Grande",
                                         icon=ft.Icons.ACCOUNT_CIRCLE,
                                         on_click=self._send_with_large_icon,
                                         expand=True,
@@ -286,7 +291,7 @@ class NotificationDemo:
     def _build_text_section(self):
         return ft.ExpansionTile(
             title=ft.Text("📝 Estilos de Texto"),
-            subtitle=ft.Text("Inbox e big text"),
+            subtitle=ft.Text("Inbox e textos expandidos"),
             controls=[
                 ft.Container(
                     content=ft.ResponsiveRow(
@@ -322,46 +327,32 @@ class NotificationDemo:
 
     def _build_advanced_section(self):
         return ft.ExpansionTile(
-            title=ft.Text("⚡ Recursos Avançados"),
-            subtitle=ft.Text("Updates em tempo real e configurações"),
+            title=ft.Text("🔬 Recursos Avançados"),
+            subtitle=ft.Text("Updates em tempo real e canais customizados"),
             controls=[
                 ft.Container(
-                    content=ft.ResponsiveRow(
+                    content=ft.Column(
                         [
-                            ft.Column(
-                                col={"xs": 12, "sm": 6, "md": 4},
-                                controls=[
-                                    ft.OutlinedButton(
-                                        "Update em Tempo Real",
-                                        icon=ft.Icons.REFRESH,
-                                        on_click=self._send_realtime_update,
-                                        expand=True,
-                                    )
-                                ],
+                            ft.OutlinedButton(
+                                "Updates em Tempo Real",
+                                icon=ft.Icons.UPDATE,
+                                on_click=self._send_realtime_update,
+                                expand=True,
                             ),
-                            ft.Column(
-                                col={"xs": 12, "sm": 6, "md": 4},
-                                controls=[
-                                    ft.OutlinedButton(
-                                        "Canal Customizado",
-                                        icon=ft.Icons.SETTINGS_INPUT_ANTENNA,
-                                        on_click=self._create_custom_channel,
-                                        expand=True,
-                                    )
-                                ],
+                            ft.OutlinedButton(
+                                "Criar Canal Customizado",
+                                icon=ft.Icons.SETTINGS,
+                                on_click=self._create_custom_channel,
+                                expand=True,
                             ),
-                            ft.Column(
-                                col={"xs": 12, "sm": 6, "md": 4},
-                                controls=[
-                                    ft.OutlinedButton(
-                                        "Sequência Completa",
-                                        icon=ft.Icons.SCIENCE,
-                                        on_click=self._run_complete_test,
-                                        expand=True,
-                                    )
-                                ],
+                            ft.OutlinedButton(
+                                "Executar Sequência Completa",
+                                icon=ft.Icons.PLAY_CIRCLE,
+                                on_click=self._run_complete_test,
+                                expand=True,
                             ),
-                        ]
+                        ],
+                        spacing=10,
                     ),
                     padding=10,
                 )
@@ -371,20 +362,19 @@ class NotificationDemo:
     def _increment_counter(self):
         self.notification_count += 1
         self.counter_text_ref.current.value = str(self.notification_count)
-        self.page.update()
+        self.counter_text_ref.current.update()
 
-    def _show_snack(self, message: str, error: bool = False, action=None):
-        snack = self.snackbar_ref.current
-        snack.content.value = message
-        snack.bgcolor = ft.Colors.RED_900 if error else None
-        snack.action = action
-        snack.open = True
-        self.page.update()
+    def _show_snack(self, message: str, error: bool = False):
+        snackbar = self.snackbar_ref.current
+        snackbar.content.value = message
+        snackbar.bgcolor = ft.colors.RED_400 if error else None
+        snackbar.open = True
+        snackbar.update()
 
-    def _dev_simulate(self, action_name: str):
+    def _dev_simulate(self, action: str) -> bool:
         if self.dev_mode:
             self._increment_counter()
-            self._show_snack(f"🔧 DEV: Simulando '{action_name}'")
+            self._show_snack(f"🔧 DEV: {action}")
             return True
         return False
 
@@ -393,12 +383,9 @@ class NotificationDemo:
             return
 
         try:
-            self.notifier.send(
-                title="Nova notificação", message="Esta é uma notificação normal"
-            )
+            self.notifier.send("Nova Mensagem", "Você tem uma nova mensagem!")
             self._increment_counter()
             self._show_snack("✅ Notificação enviada")
-
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
 
@@ -407,14 +394,9 @@ class NotificationDemo:
             return
 
         try:
-            self.notifier.send(
-                title="Notificação Silenciosa",
-                message="Sem som ou vibração",
-                silent=True,
-            )
+            self.notifier.send("Sincronização", "Dados atualizados", silent=True)
             self._increment_counter()
-            self._show_snack("🔇 Notificação silenciosa enviada")
-
+            self._show_snack("🔕 Notificação silenciosa enviada")
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
 
@@ -423,14 +405,9 @@ class NotificationDemo:
             return
 
         try:
-            self.notifier.send(
-                title="Notificação Persistente",
-                message="Não pode ser deslizada para fechar",
-                persistent=True,
-            )
+            self.notifier.send("Música Tocando", "Artist - Song Title", ongoing=True)
             self._increment_counter()
             self._show_snack("📌 Notificação persistente enviada")
-
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
 
@@ -439,7 +416,7 @@ class NotificationDemo:
             e.control.disabled = True
             self.page.update()
             self._increment_counter()
-            self._show_snack("🔧 DEV: Simulando progress bar")
+            self._show_snack("🔧 DEV: Simulando progress determinado")
             await asyncio.sleep(2)
             e.control.disabled = False
             self.page.update()
@@ -449,23 +426,22 @@ class NotificationDemo:
             e.control.disabled = True
             self.page.update()
 
-            progress = (
+            status = (
                 self.notifier.create(
-                    title="Download em andamento", message="Baixando arquivo..."
+                    title="Download em andamento", message="Iniciando download..."
                 )
-                .with_progress(0, 100)
+                .with_progress()
                 .send()
             )
 
             self._increment_counter()
-            self._show_snack("⬇️ Download iniciado")
 
             for i in range(0, 101, 10):
                 await asyncio.sleep(0.3)
-                progress.update_progress(i)
+                status.update_progress(i, message=f"{i}% concluído")
 
-            progress.remove_progress("Download concluído!", show_briefly=True)
-            self._show_snack("✅ Download concluído!")
+            status.remove_progress("Download concluído!", show_briefly=True)
+            self._show_snack("✅ Download finalizado")
 
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
@@ -478,7 +454,7 @@ class NotificationDemo:
             e.control.disabled = True
             self.page.update()
             self._increment_counter()
-            self._show_snack("🔧 DEV: Simulando processamento")
+            self._show_snack("🔧 DEV: Simulando progress indeterminado")
             await asyncio.sleep(2)
             e.control.disabled = False
             self.page.update()
@@ -488,21 +464,18 @@ class NotificationDemo:
             e.control.disabled = True
             self.page.update()
 
-            progress = (
-                self.notifier.create(
-                    title="Processando", message="Aguarde enquanto processamos..."
-                )
+            status = (
+                self.notifier.create(title="Processando", message="Aguarde...")
                 .with_progress()
                 .send()
             )
 
             self._increment_counter()
-            self._show_snack("⚙️ Processamento iniciado")
 
             await asyncio.sleep(3)
 
-            progress.remove_progress("Processamento concluído!", show_briefly=True)
-            self._show_snack("✅ Processamento concluído!")
+            status.remove_progress("Processamento concluído!", show_briefly=True)
+            self._show_snack("✅ Processamento finalizado")
 
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
@@ -516,12 +489,12 @@ class NotificationDemo:
 
         try:
 
-            def on_action():
-                self._show_snack("👆 Botão 'Abrir' clicado!")
+            def on_confirm():
+                self._show_snack("👍 Botão 'Confirmar' clicado")
 
             self.notifier.create(
-                title="Novo E-mail", message="Você tem 1 mensagem não lida"
-            ).add_button("Abrir", on_action).send(persistent=True)
+                title="Confirmar ação", message="Deseja prosseguir?"
+            ).add_button("Confirmar", on_confirm).send()
 
             self._increment_counter()
             self._show_snack("✅ Notificação com botão enviada")
@@ -536,19 +509,17 @@ class NotificationDemo:
         try:
 
             def on_accept():
-                self._show_snack("✅ Convite aceito!")
+                self._show_snack("✅ Aceito!")
 
-            def on_decline():
-                self._show_snack("❌ Convite recusado!")
+            def on_reject():
+                self._show_snack("❌ Rejeitado!")
 
             self.notifier.create(
-                title="Convite de Reunião", message="Reunião de equipe às 15h"
-            ).add_button("Aceitar", on_accept).add_button("Recusar", on_decline).send(
-                persistent=True
-            )
+                title="Solicitação de amizade", message="João quer ser seu amigo"
+            ).add_button("Aceitar", on_accept).add_button("Rejeitar", on_reject).send()
 
             self._increment_counter()
-            self._show_snack("✅ Notificação com botões enviada")
+            self._show_snack("✅ Notificação com 2 botões enviada")
 
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
@@ -559,37 +530,36 @@ class NotificationDemo:
 
         try:
 
-            def on_play():
-                self._show_snack("▶️ Play pressionado")
+            def on_yes():
+                self._show_snack("👍 Sim selecionado")
 
-            def on_pause():
-                self._show_snack("⏸️ Pause pressionado")
+            def on_no():
+                self._show_snack("👎 Não selecionado")
 
-            def on_skip():
-                self._show_snack("⏭️ Skip pressionado")
+            def on_maybe():
+                self._show_snack("🤔 Talvez selecionado")
 
             self.notifier.create(
-                title="🎵 Tocando Agora", message="Artist - Song Name"
-            ).add_button("Play", on_play).add_button("Pause", on_pause).add_button(
-                "Skip", on_skip
-            ).send(
-                persistent=True
-            )
+                title="Enquete rápida", message="Você gostou da apresentação?"
+            ).add_button("Sim", on_yes).add_button("Não", on_no).add_button(
+                "Talvez", on_maybe
+            ).send()
 
             self._increment_counter()
-            self._show_snack("✅ Notificação com controles enviada")
+            self._show_snack("✅ Notificação com 3 botões enviada")
 
         except Exception as ex:
             self._show_snack(f"Erro: {ex}", error=True)
 
     async def _send_with_large_icon(self, e):
-        if self._dev_simulate("Notificação com large icon"):
+        if self._dev_simulate("Notificação com ícone grande"):
             return
 
         try:
             self.notifier.create(
-                title="Nova Mensagem", message="@usuario enviou uma mensagem"
-            ).set_large_icon("assets/profile.jpg").send()
+                title="João Silva",
+                message="Curtiu sua foto",
+            ).set_large_icon("assets/profile.png").send()
 
             self._increment_counter()
             self._show_snack("✅ Notificação com ícone enviada")
@@ -603,8 +573,9 @@ class NotificationDemo:
 
         try:
             self.notifier.create(
-                title="Nova Foto", message="Você foi marcado em uma foto"
-            ).set_big_picture("assets/photo.jpg").send()
+                title="Nova foto compartilhada",
+                message="Maria compartilhou uma foto com você",
+            ).set_big_picture("assets/post.png").send()
 
             self._increment_counter()
             self._show_snack("✅ Notificação com imagem enviada")
@@ -620,8 +591,8 @@ class NotificationDemo:
             self.notifier.create(
                 title="@usuario comentou",
                 message="Que foto incrível! Adorei os detalhes.",
-            ).set_large_icon("assets/profile.jpg").set_big_picture(
-                "assets/post.jpg"
+            ).set_large_icon("assets/profile.png").set_big_picture(
+                "assets/photo.png"
             ).send()
 
             self._increment_counter()
