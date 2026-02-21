@@ -10,6 +10,8 @@ logger = logging.getLogger("FletNotify")
 
 
 class NotificationImportance(Enum):
+    """Níveis de importância disponíveis para um canal de notificação."""
+
     URGENT = "urgent"
     HIGH = "high"
     MEDIUM = "medium"
@@ -18,6 +20,8 @@ class NotificationImportance(Enum):
 
 
 class NotificationStyle(Enum):
+    """Estilos visuais suportados pela notificação."""
+
     SIMPLE = "simple"
     PROGRESS = "progress"
     INBOX = "inbox"
@@ -29,12 +33,16 @@ class NotificationStyle(Enum):
 
 @dataclass
 class NotificationButton:
+    """Representa um botão de ação dentro de uma notificação."""
+
     text: str
     callback: Callable[[], None]
 
 
 @dataclass
 class NotificationConfig:
+    """Configuração completa de uma notificação antes de ser enviada."""
+
     title: str
     message: str
     channel_id: str = "default"
@@ -53,22 +61,31 @@ class NotificationConfig:
 
 
 class FletNotifyException(Exception):
+    """Exceção base para erros do FletNotify."""
+
     pass
 
 
 class PermissionDeniedException(FletNotifyException):
+    """Lançada quando a permissão de notificação é negada ou não pode ser solicitada."""
+
     pass
 
 
 class PlatformNotSupportedException(FletNotifyException):
+    """Lançada quando a plataforma atual não é Android."""
+
     pass
 
 
 class AndroidNotifyNotAvailableException(FletNotifyException):
+    """Lançada quando o pacote android-notify não está instalado ou acessível."""
+
     pass
 
 
-def _check_android_notify_available():
+def _check_android_notify_available() -> bool:
+    """Verifica se o pacote android-notify está disponível no ambiente."""
     try:
         import android_notify
 
@@ -80,6 +97,7 @@ def _check_android_notify_available():
 
 
 def _get_android_notification_class():
+    """Importa e retorna a classe Notification do android-notify."""
     try:
         from android_notify import Notification
 
@@ -93,6 +111,7 @@ def _get_android_notification_class():
 
 
 def _get_notification_handler_class():
+    """Importa e retorna a classe NotificationHandler do android-notify."""
     try:
         from android_notify import NotificationHandler
 
@@ -105,8 +124,10 @@ def _get_notification_handler_class():
 
 
 class FletNotification:
+    """Representa uma notificação já construída, pronta para ser enviada ou atualizada."""
 
     def __init__(self, page: Page, config: NotificationConfig):
+        """Inicializa a notificação validando a plataforma antes de qualquer envio."""
         if not page:
             raise ValueError("Page não pode ser None")
 
@@ -129,6 +150,7 @@ class FletNotification:
         persistent: bool = False,
         close_on_click: bool = True,
     ) -> "FletNotification":
+        """Envia a notificação para a bandeja do Android com as opções fornecidas."""
         try:
             logger.info(f"Tentando enviar notificação: {self.config.title}")
 
@@ -196,6 +218,7 @@ class FletNotification:
             raise FletNotifyException(f"Falha ao enviar notificação: {e}")
 
     def update_title(self, new_title: str) -> "FletNotification":
+        """Atualiza o título de uma notificação já enviada."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -205,6 +228,7 @@ class FletNotification:
         return self
 
     def update_message(self, new_message: str) -> "FletNotification":
+        """Atualiza o texto principal de uma notificação já enviada."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -216,6 +240,7 @@ class FletNotification:
     def update_progress(
         self, current: int, title: Optional[str] = None, message: Optional[str] = None
     ) -> "FletNotification":
+        """Atualiza o valor atual da barra de progresso de uma notificação PROGRESS."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -239,6 +264,7 @@ class FletNotification:
         return self
 
     def show_infinite_progress(self) -> "FletNotification":
+        """Ativa uma barra de progresso indeterminada (infinita) na notificação."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -249,6 +275,7 @@ class FletNotification:
     def remove_progress(
         self, message: Optional[str] = None, show_briefly: bool = True
     ) -> "FletNotification":
+        """Remove a barra de progresso, opcionalmente exibindo uma mensagem final."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -259,6 +286,7 @@ class FletNotification:
         return self
 
     def cancel(self) -> None:
+        """Cancela e remove a notificação da bandeja do sistema."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -266,6 +294,7 @@ class FletNotification:
         logger.info(f"Notificação cancelada: {self.config.title}")
 
     def refresh(self) -> "FletNotification":
+        """Força uma atualização visual da notificação sem alterar seu conteúdo."""
         if not self._sent or not self._notification:
             raise FletNotifyException("Notificação ainda não foi enviada")
 
@@ -275,10 +304,12 @@ class FletNotification:
 
 
 class FletNotify:
+    """Gerenciador principal de notificações Android, implementado como singleton por página."""
 
     _instances = {}
 
     def __new__(cls, page: Page):
+        """Garante uma única instância de FletNotify por objeto Page."""
         page_id = id(page)
         if page_id not in cls._instances:
             logger.debug(f"Criando nova instância FletNotify para page {page_id}")
@@ -291,6 +322,7 @@ class FletNotify:
         return cls._instances[page_id]
 
     def __init__(self, page: Page):
+        """Inicializa e valida o ambiente Android na primeira chamada para esta página."""
         if not page:
             raise ValueError("Page não pode ser None")
 
@@ -320,6 +352,7 @@ class FletNotify:
             logger.info("✅ FletNotify inicializado com sucesso")
 
     def check_permission(self) -> bool:
+        """Verifica se a permissão POST_NOTIFICATIONS foi concedida pelo usuário."""
         logger.debug("Verificando permissão de notificação")
 
         try:
@@ -362,6 +395,7 @@ class FletNotify:
             return False
 
     def request_permission(self) -> bool:
+        """Exibe o diálogo nativo do Android para solicitar permissão de notificação."""
         logger.info("Solicitando permissão de notificação")
 
         try:
@@ -406,6 +440,7 @@ class FletNotify:
         importance: NotificationImportance = NotificationImportance.URGENT,
         notification_id: Optional[str] = None,
     ) -> "NotificationBuilder":
+        """Cria e retorna um NotificationBuilder configurado com os parâmetros fornecidos."""
         logger.debug(f"Criando builder para: {title}")
         return NotificationBuilder(
             page=self.page,
@@ -427,6 +462,7 @@ class FletNotify:
         silent: bool = False,
         persistent: bool = False,
     ) -> FletNotification:
+        """Atalho para criar e enviar uma notificação simples em uma única chamada."""
         logger.info(f"Enviando notificação simples: {title}")
         return self.create(title=title, message=message, channel_id=channel_id).send(
             silent=silent, persistent=persistent
@@ -439,6 +475,7 @@ class FletNotify:
         description: str = "",
         importance: NotificationImportance = NotificationImportance.URGENT,
     ) -> None:
+        """Cria um canal de notificação Android com a importância e descrição especificadas."""
         logger.info(f"Criando canal: {channel_name} ({channel_id})")
 
         try:
@@ -462,6 +499,7 @@ class FletNotify:
 
     @staticmethod
     def delete_channel(channel_id: str) -> None:
+        """Remove um canal de notificação existente pelo seu ID."""
         logger.info(f"Deletando canal: {channel_id}")
 
         try:
@@ -474,6 +512,7 @@ class FletNotify:
 
     @staticmethod
     def delete_all_channels() -> None:
+        """Remove todos os canais de notificação registrados pelo app."""
         logger.info("Deletando todos os canais")
 
         try:
@@ -486,6 +525,7 @@ class FletNotify:
 
     @staticmethod
     def cancel_all() -> None:
+        """Cancela e remove todas as notificações ativas na bandeja do sistema."""
         logger.info("Cancelando todas as notificações")
 
         try:
@@ -498,6 +538,7 @@ class FletNotify:
 
     @staticmethod
     def get_opened_notification() -> Optional[str]:
+        """Retorna o ID da notificação que abriu o app, ou None se não for o caso."""
         logger.debug("Verificando qual notificação abriu o app")
 
         try:
@@ -516,13 +557,16 @@ class FletNotify:
 
 
 class NotificationBuilder:
+    """Builder fluente para configurar uma notificação antes de enviá-la."""
 
     def __init__(self, page: Page, config: NotificationConfig):
+        """Inicializa o builder com a página e a configuração base da notificação."""
         self.page = page
         self.config = config
         logger.debug(f"NotificationBuilder criado: {config.title}")
 
     def set_icon(self, path: str) -> "NotificationBuilder":
+        """Define o ícone customizado do app exibido na notificação."""
         self.config.app_icon = path
         logger.debug(f"Ícone definido: {path}")
         return self
@@ -530,6 +574,7 @@ class NotificationBuilder:
     def add_button(
         self, text: str, callback: Callable[[], None]
     ) -> "NotificationBuilder":
+        """Adiciona um botão de ação à notificação, com limite de três botões."""
         if len(self.config.buttons) >= 3:
             raise FletNotifyException("Máximo de 3 botões por notificação")
 
@@ -540,6 +585,7 @@ class NotificationBuilder:
     def with_progress(
         self, current: int = 0, max_value: int = 100
     ) -> "NotificationBuilder":
+        """Configura a notificação para exibir uma barra de progresso determinada."""
         self.config.style = NotificationStyle.PROGRESS
         self.config.progress_current = current
         self.config.progress_max = max_value
@@ -547,6 +593,7 @@ class NotificationBuilder:
         return self
 
     def set_large_icon(self, path: str) -> "NotificationBuilder":
+        """Define um ícone grande à direita da notificação, combinando estilos se necessário."""
         if self.config.big_picture_path:
             self.config.style = NotificationStyle.BOTH_IMAGES
         else:
@@ -556,6 +603,7 @@ class NotificationBuilder:
         return self
 
     def set_big_picture(self, path: str) -> "NotificationBuilder":
+        """Define uma imagem expandida na notificação, combinando estilos se necessário."""
         if self.config.large_icon_path:
             self.config.style = NotificationStyle.BOTH_IMAGES
         else:
@@ -565,18 +613,21 @@ class NotificationBuilder:
         return self
 
     def set_big_text(self, body: str) -> "NotificationBuilder":
+        """Define um texto longo exibido na versão expandida da notificação."""
         self.config.style = NotificationStyle.BIG_TEXT
         self.config.big_text_body = body
         logger.debug(f"Big text definido ({len(body)} chars)")
         return self
 
     def add_line(self, text: str) -> "NotificationBuilder":
+        """Adiciona uma linha ao estilo inbox da notificação."""
         self.config.style = NotificationStyle.INBOX
         self.config.inbox_lines.append(text)
         logger.debug(f"Linha adicionada: {text}")
         return self
 
     def set_lines(self, lines: List[str]) -> "NotificationBuilder":
+        """Define todas as linhas do estilo inbox de uma vez."""
         self.config.style = NotificationStyle.INBOX
         self.config.inbox_lines = lines
         logger.debug(f"{len(lines)} linhas definidas")
@@ -588,5 +639,6 @@ class NotificationBuilder:
         persistent: bool = False,
         close_on_click: bool = True,
     ) -> FletNotification:
+        """Constrói e envia a notificação com as configurações acumuladas no builder."""
         notification = FletNotification(self.page, self.config)
         return notification.send(silent, persistent, close_on_click)

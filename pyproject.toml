@@ -8,9 +8,9 @@ authors = [
     { name = "Alison santos", email = "Alisondev77@hotmail.com" }
 ]
 dependencies = [
-    "flet==0.28.3",
+    "flet==0.80.5",
     "pyjnius",
-    "android-notify==1.60.8.dev0",
+    "android-notify==1.60.10",
 ]
 
 [tool.flet]
@@ -26,7 +26,7 @@ path = "src"
 bundle_id = "com.aldev.fletnotify"
 dependencies = [
     "pyjnius",
-    "android-notify==1.60.8.dev0"
+    "android-notify==1.60.10",
 ]
 
 [tool.flet.android.permission]
@@ -36,13 +36,13 @@ dependencies = [
 [tool.flet.flutter.pubspec.dependency_overrides]
 file_picker = "10.3.8"
 
-[tool.uv]
-dev-dependencies = [
-    "flet[all]==0.28.3",
+[tool.uv.dependency-groups]
+dev = [
+    "flet[all]==0.80.5",
 ]
 
 [tool.poetry]
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-flet = {extras = ["all"], version = "0.28.3"}
+flet = {extras = ["all"], version = "0.80.5"}
