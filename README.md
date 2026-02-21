@@ -7,8 +7,8 @@
   <a href="README.pt-BR.md">🇧🇷 Português</a>
 </p>
 
-![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Flet](https://img.shields.io/badge/Flet-0.28.0+-00B4D8?style=for-the-badge&logo=flutter&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flet](https://img.shields.io/badge/Flet-0.80.5+-00B4D8?style=for-the-badge&logo=flutter&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-13.0+-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
@@ -35,6 +35,7 @@ If you've ever tried to create Android notifications in Flet, you know the pain:
 - ✅ Robust error handling
 - ✅ Comprehensive documentation
 - ✅ Full demo app included
+- ✅ Declarative UI with `@ft.component` and `@ft.observable`
 
 ## 🚀 Features
 
@@ -65,9 +66,9 @@ If you've ever tried to create Android notifications in Flet, you know the pain:
 
 ### Prerequisites
 
-```bash
+```
 Python 3.10+
-Flet 0.28.0+ (tested and compatible up to 0.80.x)
+Flet 0.80.5+
 Android SDK (for building)
 ```
 
@@ -90,7 +91,7 @@ pip install .
 
 dependencies = [
     "pyjnius",
-    "android-notify==1.60.8.dev0"
+    "android-notify==1.60.10"
 ]
 
 [[tool.flet.android.permissions]]
@@ -123,7 +124,7 @@ def main(page: ft.Page):
         message="Your first notification with Flet!"
     )
 
-ft.app(target=main)
+ft.run(main)
 ```
 
 ### Example with Progress Bar
@@ -258,7 +259,7 @@ notification.update_progress(
     message="50% completed"
 )
 notification.remove_progress(
-    final_message="Completed!",
+    message="Completed!",
     show_briefly=True
 )
 notification.cancel()
@@ -312,7 +313,7 @@ flet build apk
 
 ```
 src/
-├── main.py              # Main app with complete UI
+├── main.py              # Main app with declarative UI
 ├── flet_notify.py       # Core library
 └── assets/              # Resources (images, icons)
 ```
@@ -324,6 +325,26 @@ The demo includes examples of:
 - ✅ Real-time updates
 - ✅ Custom channels
 - ✅ Complex sequences
+
+## 🏗️ Architecture
+
+This project uses Flet 0.80.5's declarative UI approach with `@ft.component` and `@ft.observable`, keeping state and UI cleanly separated.
+
+```python
+@dataclass
+@ft.observable
+class AppState:
+    notification_count: int = 0
+    dev_mode: bool = False
+    notifier: object = None
+
+@ft.component
+def App():
+    state, _ = ft.use_state(AppState())
+    ...
+```
+
+Each section of the UI is an isolated component that re-renders automatically when the shared `AppState` changes — no manual `page.update()` calls needed across the board.
 
 ## 🛠️ Development
 
@@ -345,11 +366,11 @@ flet_android_notify/
 The project automatically detects when running outside Android and enters "dev mode":
 
 ```python
-self.dev_mode = page.platform != ft.PagePlatform.ANDROID
+state.dev_mode = page.platform != ft.PagePlatform.ANDROID
 
-if self.dev_mode:
-    self._increment_counter()
-    self._show_snack(f"🔧 DEV: Simulating '{action_name}'")
+if state.dev_mode:
+    state.increment()
+    _show_snack(f"🔧 DEV: Simulating '{action_name}'")
     return True
 ```
 
@@ -357,13 +378,20 @@ This allows developing and testing the complete UI without needing to build for 
 
 ## 🐛 Troubleshooting
 
+### Issue: `DeprecationWarning: only() is deprecated`
+**Cause**: `ft.border.only()` was deprecated in Flet 0.80.0.
+**Solution**: Replace with `ft.Border.only()`:
+```python
+border=ft.Border.only(bottom=ft.BorderSide(1, BORDER))
+```
+
 ### Issue: "PlatformNotSupportedException"
 **Cause**: Trying to use notifications on an unsupported platform.
 **Solution**: Dev mode should detect automatically. Check if you're using the latest version.
 
 ### Issue: "PermissionDeniedException"
 **Cause**: User denied notification permission.
-**Solution**: 
+**Solution**:
 ```python
 if not notifier.check_permission():
     notifier.request_permission()
@@ -374,7 +402,7 @@ if not notifier.check_permission():
 **Solution**: Check `pyproject.toml`:
 ```toml
 [tool.flet.android]
-dependencies = ["android-notify==1.60.8.dev0"]
+dependencies = ["android-notify==1.60.10"]
 ```
 
 ### Issue: Notifications don't appear on Android 13+
@@ -384,9 +412,6 @@ dependencies = ["android-notify==1.60.8.dev0"]
 [[tool.flet.android.permissions]]
 name = "android.permission.POST_NOTIFICATIONS"
 ```
-
-### Issue: Compatibility with newer Flet versions
-**Note**: This package was thoroughly tested with Flet 0.28.0+ and is fully compatible with newer versions up to 0.80.x. The documentation specifies 0.28.0+ as the baseline version with guaranteed compatibility. If you encounter any issues with your specific Flet version, please report them in the Issues section.
 
 ## 🤝 Contributing
 
@@ -424,7 +449,7 @@ This project was inspired by and built upon the excellent work of **[Agusss (Mas
 Essential for understanding how to integrate Android notifications with Flet using PyJNIus and the android-notify library. Many concepts and patterns used here were adapted and expanded from that pioneering work.
 
 **Main differences of this fork/reimplementation:**
-- 🏗️ Refactored architecture with builder pattern
+- 🏗️ Declarative architecture with `@ft.component` and `@ft.observable`
 - 📝 Comprehensive documentation in both English and Portuguese
 - 🎨 Professional and complete demo app
 - 🛡️ Type hints and type safety
